@@ -1,0 +1,9 @@
+# Ajustes locales de Claude Code
+.claude/
+
+# Respaldos y datos generados
+respaldo-entregas-*.json
+
+# Sistema
+Thumbs.db
+.DS_Store
