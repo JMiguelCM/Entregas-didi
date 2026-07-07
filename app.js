@@ -129,8 +129,8 @@ const FIREBASE_CONFIG={
   projectId:"entregas-9e7f1",
   storageBucket:"entregas-9e7f1.firebasestorage.app",
   messagingSenderId:"569006631101",
-  appId:"1:569006631101:web:c18db43a90ebfbc4f6efd4",
-  measurementId:"G-97H03R3Z9Y"
+  appId:"1:569006631101:web:7801cc2e918b1a4bf6efd4",
+  measurementId:"G-56SJXLS2GW"
 };
 const FB_ON=!/PON_AQUI/.test(JSON.stringify(FIREBASE_CONFIG));  // ¿ya pegaste tu config?
 let db=null,fbReady=false;
