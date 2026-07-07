@@ -163,7 +163,7 @@
       </div>
       <div class="two">
         <label class="fld">Monto (COP)
-          <input type="number" id="mMonto" placeholder="0" min="0" step="1000">
+          <input type="text" id="mMonto" inputmode="numeric" placeholder="0" oninput="fmtMontoInput(this)">
         </label>
         <label class="fld">Estado
           <select id="mEstado"><option>Pagado</option><option>Pendiente</option></select>

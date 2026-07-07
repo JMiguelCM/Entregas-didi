@@ -36,6 +36,8 @@ function load(){
 function save(){localStorage.setItem(KEY,JSON.stringify(data));}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
 function money(n){return '$ '+(n||0).toLocaleString('es-CO');}
+// Formatea el input de monto con puntos de miles mientras se escribe (1.000, 100.000, 1.000.000)
+function fmtMontoInput(el){const d=el.value.replace(/\D/g,'');el.value=d?Number(d).toLocaleString('es-CO'):'';}
 function diaDe(f){const d=new Date(f+'T00:00:00');return isNaN(d)?'':DIAS[d.getDay()];}
 // Fecha local AAAA-MM-DD (toISOString usa UTC y en Colombia daba el día siguiente después de las 7 pm)
 function hoy(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
@@ -68,7 +70,7 @@ function openModal(entry){
   document.getElementById('mId').value=entry?entry.id:'';
   document.getElementById('mFecha').value=entry?entry.fecha:hoy();
   document.getElementById('mCarro').value=entry?entry.carro:AUTO_BLANCO;
-  document.getElementById('mMonto').value=entry?entry.monto:'';
+  document.getElementById('mMonto').value=entry&&entry.monto?entry.monto.toLocaleString('es-CO'):'';
   document.getElementById('mEstado').value=entry?entry.estado:'Pagado';
   document.getElementById('mNotas').value=entry?entry.notas:'';
   document.getElementById('modalBg').classList.add('show');
@@ -93,7 +95,7 @@ function saveEntry(){
     fecha,
     carro,
     cliente:personaDe(carro),   // conductor fijo según el carro
-    monto:parseFloat(document.getElementById('mMonto').value)||0,
+    monto:parseInt(document.getElementById('mMonto').value.replace(/\D/g,''),10)||0,
     estado:document.getElementById('mEstado').value,
     notas:document.getElementById('mNotas').value.trim(),
     updatedAt:Date.now()   // marca de tiempo para que este cambio gane al sincronizar
