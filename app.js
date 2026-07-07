@@ -262,7 +262,7 @@ function cardHTML(cls,name,s,car,month){
     ?`<a class="pendlink" title="Ver estas entregas pendientes" onclick="goPendientes('${car}','${month}')">${money(s.pend)}</a>`
     :`<b>${money(s.pend)}</b>`;
   return `<div class="card ${cls}">
-    <div class="lbl">${name}</div>
+    <div class="lbl">${name}${car?' · '+esc(personaDe(car)):''}</div>
     <div class="big">${money(s.cobrado)}</div>
     <div class="sub">${s.n} entrega${s.n!==1?'s':''} · pendiente ${pl}</div>
   </div>`;
