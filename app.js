@@ -6,6 +6,8 @@ const AUTO_BLANCO='Kia Picanto';   // el blanco
 const AUTO_ROJO='Chevrolet Sail';  // el rojo
 // ¿Es el carro rojo? Acepta también los nombres antiguos para migrar datos ya guardados.
 function esRojo(c){return c===AUTO_ROJO||c==='Carro Rojo';}
+// Conductor fijo de cada carro (ya no se escribe a mano)
+function personaDe(c){return esRojo(c)?'Mateo':'Bernardo';}
 let data=load();
 let chartBlanco=null,chartRojo=null,mChart=null;
 let mCursor=new Date(); mCursor.setDate(1);
@@ -66,12 +68,11 @@ function openModal(entry){
   document.getElementById('mId').value=entry?entry.id:'';
   document.getElementById('mFecha').value=entry?entry.fecha:hoy();
   document.getElementById('mCarro').value=entry?entry.carro:AUTO_BLANCO;
-  document.getElementById('mCliente').value=entry?entry.cliente:'';
   document.getElementById('mMonto').value=entry?entry.monto:'';
   document.getElementById('mEstado').value=entry?entry.estado:'Pagado';
   document.getElementById('mNotas').value=entry?entry.notas:'';
   document.getElementById('modalBg').classList.add('show');
-  setTimeout(()=>document.getElementById('mCliente').focus(),60);
+  setTimeout(()=>document.getElementById('mMonto').focus(),60);
 }
 function closeModal(){document.getElementById('modalBg').classList.remove('show');}
 document.getElementById('modalBg').onclick=e=>{if(e.target.id==='modalBg')closeModal();};
@@ -85,13 +86,13 @@ document.addEventListener('keydown',e=>{
 });
 function saveEntry(){
   const fecha=document.getElementById('mFecha').value;
-  const cliente=document.getElementById('mCliente').value.trim();
   if(!fecha){alert('Ingresa la fecha');return;}
+  const carro=document.getElementById('mCarro').value;
   const entry={
     id:document.getElementById('mId').value||uid(),
     fecha,
-    carro:document.getElementById('mCarro').value,
-    cliente:cliente,
+    carro,
+    cliente:personaDe(carro),   // conductor fijo según el carro
     monto:parseFloat(document.getElementById('mMonto').value)||0,
     estado:document.getElementById('mEstado').value,
     notas:document.getElementById('mNotas').value.trim(),
@@ -222,7 +223,7 @@ function renderTable(){
   tb.innerHTML=rows.map(d=>`<tr>
     <td>${fmtDate(d.fecha)}</td><td>${diaDe(d.fecha)}</td>
     <td><span class="pill ${esRojo(d.carro)?'rojo':'blanco'}">${esc(d.carro)}</span></td>
-    <td>${esc(d.cliente)||'<span style="color:#aab">—</span>'}</td>
+    <td>${esc(personaDe(d.carro))}</td>
     <td style="text-align:right" class="money">${money(d.monto)}</td>
     <td>${tagHTML(d)}</td>
     <td style="color:#6b7891;font-size:13px">${esc(d.notas)}</td>
@@ -364,7 +365,7 @@ function monthRows(){return data.filter(d=>d.fecha.slice(0,7)===monthKey()).sort
 function mRowHTML(d){return `<tr>
     <td>${fmtDate(d.fecha)}</td><td>${diaDe(d.fecha)}</td>
     <td><span class="pill ${esRojo(d.carro)?'rojo':'blanco'}">${esc(d.carro)}</span></td>
-    <td>${esc(d.cliente)||'—'}</td>
+    <td>${esc(personaDe(d.carro))}</td>
     <td style="text-align:right" class="money">${money(d.monto)}</td>
     <td>${tagHTML(d)}</td></tr>`;}
 function renderMensual(){
@@ -424,7 +425,7 @@ function renderMonthChart(rows){
 function exportMonthCSV(){
   const rows=monthRows();
   if(!rows.length){alert('No hay entregas en '+MESES[mCursor.getMonth()]+' '+mCursor.getFullYear());return;}
-  const head=['Fecha','Dia','Carro','Cliente','Monto','Estado','Notas'];
+  const head=['Fecha','Dia','Carro','Persona','Monto','Estado','Notas'];
   const lines=[head.join(';')].concat(rows.map(d=>
     [d.fecha,diaDe(d.fecha),d.carro,csvCell(d.cliente),d.monto,d.estado,csvCell(d.notas)].join(';')));
   const blob=new Blob([String.fromCharCode(0xFEFF)+lines.join('\r\n')],{type:'text/csv;charset=utf-8'});
@@ -442,7 +443,7 @@ function monthStats(rows,car){
 function csvCell(v){return '"'+String(v==null?'':v).replace(/"/g,'""')+'"';}
 function exportCSV(){
   const rows=filtered();
-  const head=['Fecha','Dia','Carro','Cliente','Monto','Estado','Notas'];
+  const head=['Fecha','Dia','Carro','Persona','Monto','Estado','Notas'];
   // separador ; = el que espera Excel en español (Colombia)
   const lines=[head.join(';')].concat(rows.map(d=>
     [d.fecha,diaDe(d.fecha),d.carro,csvCell(d.cliente),d.monto,d.estado,csvCell(d.notas)].join(';')));

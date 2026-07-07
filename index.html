@@ -80,7 +80,7 @@
         <input type="month" id="fMonth" onchange="renderTable()">
       </label>
       <label class="fld grow">Buscar
-        <input type="text" id="fSearch" placeholder="Cliente o nota..." oninput="renderTable()">
+        <input type="text" id="fSearch" placeholder="Persona o nota..." oninput="renderTable()">
       </label>
       <button class="btn ghost sm" onclick="clearFilters()" style="align-self:flex-end" title="Quita los filtros (no borra entregas)">Limpiar filtros</button>
       <button class="btn danger sm" onclick="clearRecords()" style="align-self:flex-end" title="Elimina las entregas mostradas">🗑 Borrar</button>
@@ -90,7 +90,7 @@
     <div class="panel" style="padding:0;overflow:auto">
       <table id="table">
         <thead><tr>
-          <th>Fecha</th><th>Día</th><th>Carro</th><th>Cliente</th>
+          <th>Fecha</th><th>Día</th><th>Carro</th><th>Persona</th>
           <th style="text-align:right">Monto</th><th>Estado</th><th>Notas</th><th></th>
         </tr></thead>
         <tbody id="tbody"></tbody>
@@ -115,7 +115,7 @@
     </div>
     <div class="panel" style="padding:0;overflow:auto">
       <table>
-        <thead><tr><th>Fecha</th><th>Día</th><th>Carro</th><th>Cliente</th><th style="text-align:right">Monto</th><th>Estado</th></tr></thead>
+        <thead><tr><th>Fecha</th><th>Día</th><th>Carro</th><th>Persona</th><th style="text-align:right">Monto</th><th>Estado</th></tr></thead>
         <tbody id="mBody"></tbody>
       </table>
       <div id="mEmpty" class="empty" style="display:none">No hay entregas este mes.</div>
@@ -161,9 +161,6 @@
           <select id="mCarro"><option>Kia Picanto</option><option>Chevrolet Sail</option></select>
         </label>
       </div>
-      <label class="fld">Cliente
-        <input type="text" id="mCliente" placeholder="Nombre del cliente">
-      </label>
       <div class="two">
         <label class="fld">Monto (COP)
           <input type="number" id="mMonto" placeholder="0" min="0" step="1000">
