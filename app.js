@@ -321,6 +321,8 @@ function chartKeysRange(keys,gran){
   for(let i=0;d<=end&&i<1000;i++){out.push(ymd(d));d.setDate(d.getDate()+step);}
   return out;
 }
+// Etiqueta del eje Y: en miles ($30k) para montos grandes, sin decimales feos cuando no hay datos
+function tickMoneda(v){return v>=1000?'$'+Math.round(v/1000)+'k':'$'+Math.round(v);}
 function renderChart(){
   const box=document.getElementById('chartBox');
   if(typeof Chart==='undefined'){
@@ -346,7 +348,7 @@ function renderChart(){
   // Escala Y común para que las dos gráficas sean comparables a simple vista
   const maxVal=Math.max(1,...keys.map(k=>Math.max(map[k].blanco,map[k].rojo)));
   const opts={responsive:true,maintainAspectRatio:false,
-    scales:{y:{beginAtZero:true,suggestedMax:maxVal,ticks:{callback:v=>'$'+(v/1000)+'k'}}},
+    scales:{y:{beginAtZero:true,suggestedMax:maxVal,ticks:{callback:tickMoneda,precision:0}}},
     plugins:{legend:{position:'bottom'}}};
   if(chartBlanco)chartBlanco.destroy();
   chartBlanco=new Chart(document.getElementById('chartBlanco'),{type:'bar',
@@ -418,7 +420,7 @@ function renderMonthChart(rows){
     {label:AUTO_BLANCO,data:keys.map(k=>map[k].blanco),backgroundColor:'#3b6fb0'},
     {label:AUTO_ROJO,data:keys.map(k=>map[k].rojo),backgroundColor:'#c00000'}
   ]},options:{responsive:true,maintainAspectRatio:false,
-    scales:{y:{beginAtZero:true,ticks:{callback:v=>'$'+(v/1000)+'k'}}},
+    scales:{y:{beginAtZero:true,ticks:{callback:tickMoneda,precision:0}}},
     plugins:{legend:{position:'bottom'}}}});
 }
 // Descarga en CSV solo las entregas del mes que se está viendo
