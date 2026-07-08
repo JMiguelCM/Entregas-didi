@@ -154,6 +154,7 @@ function toggleEstado(id){
 /* ===== MODAL Y ACCIONES DE DEUDAS ===== */
 function openDeuda(){
   document.getElementById('dCarro').value=AUTO_BLANCO;
+  document.getElementById('dFecha').value=hoy();   // por defecto hoy, editable
   document.getElementById('dMonto').value='';
   document.getElementById('dNotas').value='';
   document.getElementById('deudaBg').classList.add('show');
@@ -169,7 +170,7 @@ function saveDeuda(){
     carro:document.getElementById('dCarro').value,
     monto,
     abonado:0,
-    fecha:hoy(),
+    fecha:document.getElementById('dFecha').value||hoy(),
     notas:document.getElementById('dNotas').value.trim(),
     updatedAt:Date.now()
   };
@@ -211,6 +212,7 @@ function renderDeudas(){
         <div class="deuda-info">
           <span class="pill ${esRojo(d.carro)?'rojo':'blanco'}">${esc(d.carro)}</span>
           <span class="deuda-persona">${esc(personaDe(d.carro))}</span>
+          ${d.fecha?`<span class="deuda-fecha">📅 ${fmtDate(d.fecha)}</span>`:''}
           ${d.notas?`<span class="deuda-nota">${esc(d.notas)}</span>`:''}
         </div>
         <div class="deuda-nums">
