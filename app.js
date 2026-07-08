@@ -152,29 +152,41 @@ function toggleEstado(id){
 }
 
 /* ===== MODAL Y ACCIONES DE DEUDAS ===== */
-function openDeuda(){
-  document.getElementById('dCarro').value=AUTO_BLANCO;
-  document.getElementById('dFecha').value=hoy();   // por defecto hoy, editable
-  document.getElementById('dMonto').value='';
-  document.getElementById('dNotas').value='';
+function openDeuda(d){
+  document.getElementById('deudaTitle').textContent=d?'💳 Editar deuda':'💳 Registrar deuda';
+  document.getElementById('dId').value=d?d.id:'';
+  document.getElementById('dCarro').value=d?d.carro:AUTO_BLANCO;
+  document.getElementById('dFecha').value=d?d.fecha:hoy();   // por defecto hoy, editable
+  document.getElementById('dMonto').value=d&&d.monto?d.monto.toLocaleString('es-CO'):'';
+  // El campo "abonado" solo se muestra al editar (para corregir un abono mal puesto)
+  document.getElementById('dAbonadoFld').style.display=d?'':'none';
+  document.getElementById('dAbonado').value=d&&d.abonado?d.abonado.toLocaleString('es-CO'):'';
+  document.getElementById('dNotas').value=d?d.notas:'';
   document.getElementById('deudaBg').classList.add('show');
   setTimeout(()=>document.getElementById('dMonto').focus(),60);
 }
+function editDeuda(id){const d=deudas.find(x=>x.id===id);if(d)openDeuda(d);}
 function closeDeuda(){document.getElementById('deudaBg').classList.remove('show');}
 document.getElementById('deudaBg').onclick=e=>{if(e.target.id==='deudaBg')closeDeuda();};
 function saveDeuda(){
   const monto=parseInt(document.getElementById('dMonto').value.replace(/\D/g,''),10)||0;
   if(monto<=0){alert('Ingresa el monto de la deuda');return;}
+  const id=document.getElementById('dId').value;
+  const prev=id?deudas.find(x=>x.id===id):null;
+  // Al crear, abonado=0. Al editar, se toma del campo (topado al monto).
+  const abonado=prev?Math.min(monto,parseInt(document.getElementById('dAbonado').value.replace(/\D/g,''),10)||0):0;
   const d={
-    id:uid(),
+    id:id||uid(),
     carro:document.getElementById('dCarro').value,
     monto,
-    abonado:0,
+    abonado,
     fecha:document.getElementById('dFecha').value||hoy(),
     notas:document.getElementById('dNotas').value.trim(),
     updatedAt:Date.now()
   };
-  deudas.push(d);saveDeudas();fbSetDeuda(d);closeDeuda();renderDeudas();
+  const i=deudas.findIndex(x=>x.id===d.id);
+  if(i>=0)deudas[i]=d;else deudas.push(d);
+  saveDeudas();fbSetDeuda(d);closeDeuda();renderDeudas();
 }
 // Registra un abono a una deuda activa. Se topa al saldo (no puede quedar negativo).
 function abonar(id){
@@ -223,6 +235,7 @@ function renderDeudas(){
         <div class="deuda-abono">
           <input type="text" id="ab_${d.id}" inputmode="numeric" placeholder="Abono" oninput="fmtMontoInput(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();abonar('${d.id}')}">
           <button class="btn sm" onclick="abonar('${d.id}')">Abonar</button>
+          <button class="icon-btn" title="Editar deuda" onclick="editDeuda('${d.id}')">✎</button>
           <button class="icon-btn del" title="Eliminar deuda" onclick="delDeuda('${d.id}')">🗑</button>
         </div>
       </div>`;
@@ -232,7 +245,7 @@ function renderDeudas(){
   }
   if(saldadas.length){
     html+='<div class="deudas-saldadas"><span>Saldadas:</span> '+saldadas.map(d=>
-      `<span class="deuda-chip">${esc(d.carro)} · ${money(d.monto)}<button class="chip-x" title="Quitar de la lista" onclick="delDeuda('${d.id}')">×</button></span>`
+      `<span class="deuda-chip"><button class="chip-lbl" title="Editar deuda" onclick="editDeuda('${d.id}')">${esc(d.carro)} · ${money(d.monto)}</button><button class="chip-x" title="Quitar de la lista" onclick="delDeuda('${d.id}')">×</button></span>`
     ).join(' ')+'</div>';
   }
   box.innerHTML=html;

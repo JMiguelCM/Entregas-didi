@@ -187,8 +187,9 @@
 <!-- MODAL DEUDA -->
 <div class="modal-bg" id="deudaBg">
   <div class="modal" style="max-width:440px">
-    <h3>💳 Registrar deuda</h3>
+    <h3 id="deudaTitle">💳 Registrar deuda</h3>
     <div class="body">
+      <input type="hidden" id="dId">
       <div class="two">
         <label class="fld">Carro
           <select id="dCarro"><option>Kia Picanto</option><option>Chevrolet Sail</option></select>
@@ -199,6 +200,9 @@
       </div>
       <label class="fld">Monto de la deuda (COP)
         <input type="text" id="dMonto" inputmode="numeric" placeholder="0" oninput="fmtMontoInput(this)">
+      </label>
+      <label class="fld" id="dAbonadoFld" style="display:none">Abonado hasta ahora (COP)
+        <input type="text" id="dAbonado" inputmode="numeric" placeholder="0" oninput="fmtMontoInput(this)">
       </label>
       <label class="fld">Motivo de la deuda
         <input type="text" id="dNotas" placeholder="Ej: arreglo cerradura, cambio de llanta...">
