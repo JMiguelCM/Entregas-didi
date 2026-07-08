@@ -90,6 +90,27 @@ tr.wk-sub:hover td{background:var(--blue-l)}
 .modal .body .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .modal .foot{padding:0 20px 20px;display:flex;justify-content:flex-end;gap:10px}
 .foot-note{text-align:center;color:var(--muted);font-size:12.5px;margin-top:30px}
+/* Deudas (vista Entregas) */
+.deudas-panel{border-left:4px solid var(--amber)}
+.deudas-head{margin-bottom:12px}
+.deuda-row{display:flex;gap:14px;align-items:center;flex-wrap:wrap;padding:12px 0;border-top:1px solid var(--line)}
+.deuda-info{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:150px}
+.deuda-persona{font-weight:600;font-size:13.5px}
+.deuda-nota{font-size:12.5px;color:var(--muted);font-style:italic}
+.deuda-nums{display:flex;flex-direction:column;gap:3px;flex:1;min-width:160px}
+.deuda-saldo{font-size:14px}
+.deuda-saldo b{color:var(--red);font-variant-numeric:tabular-nums}
+.deuda-sub{font-size:12px;color:var(--muted)}
+.deuda-bar{height:6px;border-radius:6px;background:var(--line);overflow:hidden;margin-top:2px}
+.deuda-bar>span{display:block;height:100%;background:var(--green);border-radius:6px;transition:width .25s}
+.deuda-abono{display:flex;align-items:center;gap:8px}
+.deuda-abono input{width:110px}
+.deuda-none{padding:12px 0;color:var(--green);font-weight:600;border-top:1px solid var(--line)}
+.deudas-saldadas{margin-top:12px;padding-top:10px;border-top:1px dashed var(--line);font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.deuda-chip{display:inline-flex;align-items:center;gap:6px;background:var(--green-bg);color:var(--green);padding:3px 8px;border-radius:14px;font-weight:600}
+.chip-x{border:none;background:transparent;color:var(--green);cursor:pointer;font-size:15px;line-height:1;padding:0}
+.chip-x:hover{color:var(--red)}
+@media(max-width:600px){.deuda-abono input{flex:1;width:auto}}
 .monthnav{display:flex;align-items:center;gap:14px;margin-bottom:16px}
 .monthnav .lbl{font-size:18px;font-weight:700;color:var(--nav);min-width:150px;text-align:center}
 @media(max-width:600px){.modal .body .two{grid-template-columns:1fr}th,td{padding:8px}.card .big{font-size:22px}}

@@ -9,6 +9,7 @@ function esRojo(c){return c===AUTO_ROJO||c==='Carro Rojo';}
 // Conductor fijo de cada carro (ya no se escribe a mano)
 function personaDe(c){return esRojo(c)?'Mateo':'Bernardo';}
 let data=load();
+let deudas=loadDeudas();
 let chartBlanco=null,chartRojo=null,mChart=null;
 let mCursor=new Date(); mCursor.setDate(1);
 
@@ -35,6 +36,31 @@ function load(){
 }
 function save(){localStorage.setItem(KEY,JSON.stringify(data));}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+
+/* ===== DEUDAS ===== */
+const DKEY='deudas_carros_v1';
+// Normaliza una deuda venga de donde venga (misma idea que normalize() para entregas)
+function normalizeDeuda(d){
+  d=(d&&typeof d==='object')?d:{};
+  return {
+    id:String(d.id||uid()),
+    carro:esRojo(d.carro)?AUTO_ROJO:AUTO_BLANCO,
+    monto:Math.max(0,Number(d.monto)||0),      // total de la deuda
+    abonado:Math.max(0,Number(d.abonado)||0),  // suma de abonos hechos
+    fecha:String(d.fecha||'').slice(0,10),
+    notas:String(d.notas||''),
+    updatedAt:Number(d.updatedAt)||0
+  };
+}
+function loadDeudas(){
+  try{const d=JSON.parse(localStorage.getItem(DKEY));if(Array.isArray(d))return d.map(normalizeDeuda);}catch(e){}
+  return [];
+}
+function saveDeudas(){localStorage.setItem(DKEY,JSON.stringify(deudas));}
+// Lo que todavía se debe de esta deuda (nunca negativo)
+function saldoDeuda(d){return Math.max(0,d.monto-d.abonado);}
+// Deudas que aún tienen saldo pendiente (las que muestran el input de abono)
+function deudasActivas(){return deudas.filter(d=>saldoDeuda(d)>0);}
 function money(n){return '$ '+(n||0).toLocaleString('es-CO');}
 // Formatea el input de monto con puntos de miles mientras se escribe (1.000, 100.000, 1.000.000)
 function fmtMontoInput(el){const d=el.value.replace(/\D/g,'');el.value=d?Number(d).toLocaleString('es-CO'):'';}
@@ -81,10 +107,12 @@ document.getElementById('modalBg').onclick=e=>{if(e.target.id==='modalBg')closeM
 // Atajos: Escape cierra, Enter guarda la entrega (salvo en Notas o sobre un botón)
 document.addEventListener('keydown',e=>{
   const confirmOpen=document.getElementById('confirmBg').classList.contains('show');
-  if(e.key==='Escape'){closeModal();closeConfig();closeConfirm();}
+  if(e.key==='Escape'){closeModal();closeConfig();closeConfirm();closeDeuda();}
   else if(e.key==='Enter'&&confirmOpen){document.getElementById('confirmOk').click();}
   else if(e.key==='Enter'&&e.target.tagName!=='TEXTAREA'&&e.target.tagName!=='BUTTON'
     &&document.getElementById('modalBg').classList.contains('show'))saveEntry();
+  else if(e.key==='Enter'&&e.target.tagName!=='BUTTON'
+    &&document.getElementById('deudaBg').classList.contains('show'))saveDeuda();
 });
 function saveEntry(){
   const fecha=document.getElementById('mFecha').value;
@@ -123,6 +151,91 @@ function toggleEstado(id){
   save();fbSet(d);renderAll();
 }
 
+/* ===== MODAL Y ACCIONES DE DEUDAS ===== */
+function openDeuda(){
+  document.getElementById('dCarro').value=AUTO_BLANCO;
+  document.getElementById('dMonto').value='';
+  document.getElementById('dNotas').value='';
+  document.getElementById('deudaBg').classList.add('show');
+  setTimeout(()=>document.getElementById('dMonto').focus(),60);
+}
+function closeDeuda(){document.getElementById('deudaBg').classList.remove('show');}
+document.getElementById('deudaBg').onclick=e=>{if(e.target.id==='deudaBg')closeDeuda();};
+function saveDeuda(){
+  const monto=parseInt(document.getElementById('dMonto').value.replace(/\D/g,''),10)||0;
+  if(monto<=0){alert('Ingresa el monto de la deuda');return;}
+  const d={
+    id:uid(),
+    carro:document.getElementById('dCarro').value,
+    monto,
+    abonado:0,
+    fecha:hoy(),
+    notas:document.getElementById('dNotas').value.trim(),
+    updatedAt:Date.now()
+  };
+  deudas.push(d);saveDeudas();fbSetDeuda(d);closeDeuda();renderDeudas();
+}
+// Registra un abono a una deuda activa. Se topa al saldo (no puede quedar negativo).
+function abonar(id){
+  const d=deudas.find(x=>x.id===id);if(!d)return;
+  const inp=document.getElementById('ab_'+id);
+  const val=parseInt((inp&&inp.value||'').replace(/\D/g,''),10)||0;
+  if(val<=0){alert('Escribe el monto del abono');if(inp)inp.focus();return;}
+  const aplicado=Math.min(val,saldoDeuda(d));   // no abonar de más
+  d.abonado+=aplicado;d.updatedAt=Date.now();
+  saveDeudas();fbSetDeuda(d);
+  if(inp)inp.value='';
+  renderDeudas();
+}
+function delDeuda(id){
+  const d=deudas.find(x=>x.id===id);if(!d)return;
+  confirmPop('¿Eliminar esta deuda de '+d.carro+'?\nDeuda '+money(d.monto)+' · abonado '+money(d.abonado),()=>{
+    deudas=deudas.filter(x=>x.id!==id);saveDeudas();fbDeleteDeuda(id);renderDeudas();
+  },'Eliminar');
+}
+// Pinta el panel de deudas en la vista Entregas. El input de abono solo sale
+// en las deudas con saldo pendiente; el panel entero se oculta si no hay deudas.
+function renderDeudas(){
+  const box=document.getElementById('deudasBox');
+  if(!box)return;
+  if(!deudas.length){box.style.display='none';box.innerHTML='';return;}
+  box.style.display='';
+  const activas=deudasActivas().sort((a,b)=>a.fecha.localeCompare(b.fecha));
+  const saldadas=deudas.filter(d=>saldoDeuda(d)<=0);
+  let html='<div class="deudas-head"><h2 style="margin:0">💳 Deudas</h2></div>';
+  if(activas.length){
+    html+=activas.map(d=>{
+      const saldo=saldoDeuda(d);
+      const pct=d.monto?Math.min(100,Math.round(d.abonado/d.monto*100)):0;
+      return `<div class="deuda-row">
+        <div class="deuda-info">
+          <span class="pill ${esRojo(d.carro)?'rojo':'blanco'}">${esc(d.carro)}</span>
+          <span class="deuda-persona">${esc(personaDe(d.carro))}</span>
+          ${d.notas?`<span class="deuda-nota">${esc(d.notas)}</span>`:''}
+        </div>
+        <div class="deuda-nums">
+          <span class="deuda-saldo">Debe <b>${money(saldo)}</b></span>
+          <span class="deuda-sub">de ${money(d.monto)} · abonado ${money(d.abonado)}</span>
+          <div class="deuda-bar"><span style="width:${pct}%"></span></div>
+        </div>
+        <div class="deuda-abono">
+          <input type="text" id="ab_${d.id}" inputmode="numeric" placeholder="Abono" oninput="fmtMontoInput(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();abonar('${d.id}')}">
+          <button class="btn sm" onclick="abonar('${d.id}')">Abonar</button>
+          <button class="icon-btn del" title="Eliminar deuda" onclick="delDeuda('${d.id}')">🗑</button>
+        </div>
+      </div>`;
+    }).join('');
+  }else{
+    html+='<div class="deuda-none">✔ No hay deudas activas. ¡Todo al día!</div>';
+  }
+  if(saldadas.length){
+    html+='<div class="deudas-saldadas"><span>Saldadas:</span> '+saldadas.map(d=>
+      `<span class="deuda-chip">${esc(d.carro)} · ${money(d.monto)}<button class="chip-x" title="Quitar de la lista" onclick="delDeuda('${d.id}')">×</button></span>`
+    ).join(' ')+'</div>';
+  }
+  box.innerHTML=html;
+}
+
 /* ===== SINCRONIZACIÓN CON FIREBASE (FIRESTORE) ===== */
 // 👉 Pega aquí la configuración de TU proyecto Firebase:
 //    Consola Firebase → ⚙ Configuración del proyecto → "Tus apps" → app web → SDK/Configuración.
@@ -136,7 +249,7 @@ const FIREBASE_CONFIG={
   measurementId:"G-56SJXLS2GW"
 };
 const FB_ON=!/PON_AQUI/.test(JSON.stringify(FIREBASE_CONFIG));  // ¿ya pegaste tu config?
-let db=null,fbReady=false;
+let db=null,fbReady=false,deudasReady=false;
 
 function setStatus(cls,txt){const s=document.getElementById('syncStatus');s.className='sync '+cls;s.textContent='● '+txt;}
 function refreshStatus(){
@@ -178,12 +291,30 @@ function initFirebase(){
       }
       save();renderAll();setStatus('ok','En la nube');
     },()=>setStatus('err','Sin conexión'));
+    // Segunda colección: deudas (mismo patrón, con migración inicial de lo local)
+    db.collection('deudas').onSnapshot(snap=>{
+      const cloud=snap.docs.map(doc=>normalizeDeuda(doc.data()));
+      if(!deudasReady){
+        const ids=new Set(cloud.map(d=>d.id));
+        const localOnly=deudas.filter(d=>!ids.has(d.id));
+        localOnly.forEach(fbSetDeuda);
+        deudas=cloud.concat(localOnly);
+        deudasReady=true;
+      }else{
+        deudas=cloud;
+      }
+      saveDeudas();renderDeudas();
+    },()=>{});
   }catch(e){setStatus('err','Error Firebase');}
 }
 // Escrituras a Firestore (el id del documento = el id de la entrega)
 function fbSet(entry){if(db)db.collection('entregas').doc(entry.id).set(entry).catch(()=>setStatus('err','Sin conexión'));}
 function fbDelete(id){if(db)db.collection('entregas').doc(id).delete().catch(()=>{});}
 function fbSetAll(rows){if(!db)return;const b=db.batch();rows.forEach(r=>b.set(db.collection('entregas').doc(r.id),r));b.commit().catch(()=>{});}
+// Deudas (colección aparte, mismo esquema de sincronización que las entregas)
+function fbSetDeuda(d){if(db)db.collection('deudas').doc(d.id).set(d).catch(()=>setStatus('err','Sin conexión'));}
+function fbDeleteDeuda(id){if(db)db.collection('deudas').doc(id).delete().catch(()=>{});}
+function fbSetAllDeudas(rows){if(!db)return;const b=db.batch();rows.forEach(r=>b.set(db.collection('deudas').doc(r.id),r));b.commit().catch(()=>{});}
 
 /* TABLE */
 function filtered(){
@@ -458,7 +589,10 @@ function exportCSV(){
 
 /* RESPALDO */
 function exportJSON(){
-  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  // Respaldo nuevo: incluye entregas y deudas. (Los respaldos viejos eran un
+  // simple array de entregas; importJSON sigue aceptándolos.)
+  const payload={entregas:data,deudas:deudas};
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);
   a.download='respaldo-entregas-'+hoy()+'.json';a.click();
 }
@@ -467,12 +601,18 @@ function importJSON(file){
   const r=new FileReader();
   r.onload=()=>{
     try{
-      const arr=JSON.parse(r.result);
-      if(!Array.isArray(arr)||!arr.length)throw new Error('formato');
+      const parsed=JSON.parse(r.result);
+      // Acepta el formato viejo (array de entregas) y el nuevo ({entregas,deudas})
+      const arr=Array.isArray(parsed)?parsed:(Array.isArray(parsed.entregas)?parsed.entregas:[]);
+      const darr=(!Array.isArray(parsed)&&Array.isArray(parsed.deudas))?parsed.deudas:[];
+      if(!arr.length&&!darr.length)throw new Error('formato');
       const rows=arr.map(normalize);
-      if(!confirm('Se reemplazarán las '+data.length+' entregas actuales por las '+rows.length+' del respaldo. ¿Continuar?'))return;
-      data=rows;save();fbSetAll(rows);renderAll();closeConfig();
-      alert('Respaldo restaurado: '+rows.length+' entregas.');
+      const drows=darr.map(normalizeDeuda);
+      if(!confirm('Se reemplazarán las '+data.length+' entregas y '+deudas.length+' deudas actuales por las '+rows.length+' entregas y '+drows.length+' deudas del respaldo. ¿Continuar?'))return;
+      data=rows;save();fbSetAll(rows);
+      deudas=drows;saveDeudas();fbSetAllDeudas(drows);
+      renderAll();closeConfig();
+      alert('Respaldo restaurado: '+rows.length+' entregas y '+drows.length+' deudas.');
     }catch(e){alert('El archivo no parece un respaldo válido (.json descargado desde esta app).');}
   };
   r.readAsText(file);
@@ -485,6 +625,6 @@ function fmtDate(f){
 }
 function esc(s){return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
-function renderAll(){renderPanel();renderTable();renderMensual();}
+function renderAll(){renderPanel();renderTable();renderMensual();renderDeudas();}
 renderAll();
 initFirebase();
